@@ -10,12 +10,29 @@ import PhotoView from './pages/PhotoView';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useAuthStore } from './context/authStore';
 
 const queryClient = new QueryClient();
 
 const App = () => {
-    // This is a mock authentication state - replace with your actual auth logic
-    const isAuthenticated = true;
+    const { isAuthenticated, setAuth } = useAuthStore();
+
+    useEffect(() => {
+        axios
+            .get(`${import.meta.env.VITE_API_URL}/user/me`, { withCredentials: true })
+            .then((response) => {
+                setAuth(true);
+            })
+            .catch(() => {
+                setAuth(false);
+            });
+    }, [setAuth]);
+
+    if (isAuthenticated === null) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <QueryClientProvider client={queryClient}>
