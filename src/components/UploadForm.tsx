@@ -52,7 +52,9 @@ const UploadForm = () => {
             setIsUploading(true);
 
             // GET PRE-SIGNED URL
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/photo/generate-upload-url`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/photo/generate-upload-url`, {
+                withCredentials: true,
+            });
 
             if (response.status !== 200) {
                 toast({
@@ -68,14 +70,21 @@ const UploadForm = () => {
             // UPLOAD TO AZURE STORAGE
             const formData = new FormData();
             formData.append('file', image);
+            const file = formData.getAll('file')[0];
+            console.log(file);
+            // @ts-expect-error
+            console.log(file.type);
 
-            const uploadResponse = await axios.post(url, formData, {
+            const uploadResponse = await axios.put(url, file, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'x-ms-blob-type': 'BlockBlob',
+                    'Content-Type': 'image/jpeg',
+                    // 'x-ms-blob-type': 'multipart/form-data',
+                    // 'Content-Length': 0,
                 },
             });
 
-            if (uploadResponse.status !== 200) {
+            if (uploadResponse.status > 299 || uploadResponse.status < 200) {
                 toast({
                     title: 'Error',
                     description: 'Failed to upload image',
@@ -92,9 +101,11 @@ const UploadForm = () => {
                 tags,
             };
 
-            const finalResponse = await axios.post(`${import.meta.env.VITE_API_URL}/photo/upload`, newPhoto);
+            const finalResponse = await axios.post(`${import.meta.env.VITE_API_URL}/photo/upload`, newPhoto, {
+                withCredentials: true,
+            });
 
-            if (finalResponse.status !== 200) {
+            if (finalResponse.status > 299 || finalResponse.status < 200) {
                 toast({
                     title: 'Error',
                     description: 'Failed to save photo in db',
